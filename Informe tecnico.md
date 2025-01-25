@@ -344,10 +344,12 @@ Este código crea un formulario oculto con los parámetros necesarios (amount y 
 
 **Explicad qué condición se tendrá que cumplir por que se efectúen las donaciones de los usuarios que visualicen el mensaje del apartado anterior o hagan click en el botón del apartado a).**
 
-Sesión activa: Si el sistema web.pagos requiere que los usuarios estén logueados para realizar cualquier tipo de transacción (como una donación), será necesario que el navegador del usuario ya tenga una cookie de sesión activa que permita autenticarlo. Esto es lo que permite identificar al usuario y asociarlo con su cuenta.
+- Sesión activa: Si el sistema web.pagos requiere que los usuarios estén logueados para realizar cualquier tipo de transacción (como una donación), será necesario que el navegador del usuario ya tenga una cookie de sesión activa que permita autenticarlo. Esto es lo que permite identificar al usuario y asociarlo con su cuenta.
 
-Transacción entre usuarios registrados: Al ser un sistema de pagos entre usuarios registrados, web.pagos utilizará la cookie de sesión o un token de autenticación para identificar a quien está haciendo la donación y deducir el dinero de su cuenta. Este es el paso clave: la transacción solo puede ocurrir si el usuario tiene una cuenta registrada y activa dentro de web.pagos.
+- Transacción entre usuarios registrados: Al ser un sistema de pagos entre usuarios registrados, web.pagos utilizará la cookie de sesión o un token de autenticación para identificar a quien está haciendo la donación y deducir el dinero de su cuenta. Este es el paso clave: la transacción solo puede ocurrir si el usuario tiene una cuenta registrada y activa dentro de web.pagos.
 
-Verificación de usuario: Si el usuario está logueado en la plataforma, el ataque será exitoso, ya que la donación se efectuará desde la cuenta del usuario víctima (que está visualizando el comentario o interactuando con el botón malicioso). Si el usuario no está logueado o no tiene una sesión activa, el ataque fallará, porque web.pagos no podrá deducir los 100€ de su cuenta.
+- Verificación de usuario: Si el usuario está logueado en la plataforma, el ataque será exitoso, ya que la donación se efectuará desde la cuenta del usuario víctima (que está visualizando el comentario o interactuando con el botón malicioso). Si el usuario no está logueado o no tiene una sesión activa, el ataque fallará, porque web.pagos no podrá deducir los 100€ de su cuenta.
 
 **D) Si web.pagos modifica la página `donate.php` para que reciba los parámetros a través de POST, quedaría blindada contra este tipo de ataques? En caso negativo, preparad un mensaje que realice un ataque equivalente al de la apartado b) enviando los parámetros “amount” i “receiver” por POST.**
+
+![FALTA]()
