@@ -334,7 +334,7 @@
 
     1. Encriptación los archivos de la carpeta: 
     Los archivos que estan dentro de la carpeta `private` podrían estar encriptados. Solo se desencriptarían dentro del contenedor en tiempo de ejecución usando una clave. 
-    
+
     El gran problema que tendria este metodo, es que la clave para desencriptar los archivos debe estar disponible en algún lugar para que el contenedor pueda funcionar correctamente, por lo que el usuario podria coger esa clave, y desencriptar los archivos.
 
 
@@ -345,17 +345,17 @@
 
 ### **E) Por último, comprobando el flujo de la sesión del usuario. Analiza si está bien asegurada la sesión del usuario y que no podemos suplantar a ningún usuario. Si no está bien asegurada, qué acciones podríamos realizar e implementarlas.**
 
-Basándonos en la información proporcionada, parece que hay varias áreas donde la seguridad de la sesión del usuario podría mejorarse. Aquí están los problemas identificados y las acciones recomendadas para implementar:
+    Basándonos en la información proporcionada, parece que hay varias áreas donde la seguridad de la sesión del usuario podría mejorarse. Aquí están los problemas identificados y las acciones recomendadas para implementar:
 
-**Problemas de seguridad**
+    **Problemas de seguridad**
 
-1. Uso de cookies para almacenar credenciales: El código actual almacena el nombre de usuario y la contraseña en cookies, lo cual es extremadamente inseguro[5].
+    1. Uso de cookies para almacenar credenciales: El código actual almacena el nombre de usuario y la contraseña en cookies, lo cual es extremadamente inseguro[5].
 
-2. Falta de regeneración de ID de sesión: No se está utilizando session_regenerate_id() después de un inicio de sesión exitoso[1][4].
+    2. Falta de regeneración de ID de sesión: No se está utilizando session_regenerate_id() después de un inicio de sesión exitoso[1][4].
 
-3. Configuración de cookies de sesión: No se están configurando parámetros importantes de las cookies de sesión como HttpOnly y SameSite[1].
+    3. Configuración de cookies de sesión: No se están configurando parámetros importantes de las cookies de sesión como HttpOnly y SameSite[1].
 
-4. Falta de validación adicional: No se está realizando una validación adicional del usuario más allá del ID de sesión[7].
+    4. Falta de validación adicional: No se está realizando una validación adicional del usuario más allá del ID de sesión[7].
 
     **Acciones recomendadas**
 
@@ -392,7 +392,7 @@ Basándonos en la información proporcionada, parece que hay varias áreas donde
     ```php
     $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
     $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'];
-    
+
     // En cada página que requiera autenticación
     if ($_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT'] || 
         $_SESSION['ip_address'] !== $_SERVER['REMOTE_ADDR']) {
