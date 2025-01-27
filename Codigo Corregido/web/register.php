@@ -5,11 +5,11 @@ require_once dirname(__FILE__) . '/private/conf.php';
 # require dirname(__FILE__) . '/private/auth.php';
 
 if (isset($_POST['username']) && isset($_POST['password'])) {
-    # Just in from POST => save to database
+    # POST => Base de datos
     $username = $_POST['username'];
     $password = $_POST['password'];
     
-    # Prevent SQL Injection with prepared statements and escape user input.
+    # Prevenir SQLi
     $stmt = $db->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
     $stmt->bindValue(':username', $username, SQLITE3_TEXT);
     $stmt->bindValue(':password', password_hash($password, PASSWORD_DEFAULT), SQLITE3_TEXT); // Hasheo de contraseña
