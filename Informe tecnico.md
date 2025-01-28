@@ -30,6 +30,8 @@ SELECT userId, password FROM users WHERE username = "" OR password="1234"
 ```
 El comentario `--` ignora el resto de la consulta, dejando solo las condiciones manipuladas por el atacante.
 
+<br><hr><br>
+
 ### **B) Gracias a la SQL Injection del apartado anterior, sabemos que este formulario es vulnerable y conocemos el nombre de los campos de la tabla “users”. Para tratar de impersonar a un usuario, nos hemos descargado un diccionario que contiene algunas de las contraseñas más utilizadas (se listan a continuación):**
 ### **- password**
 ### **- 123456**
@@ -76,6 +78,8 @@ for password in passwords:
 
 El cual va probando contraseñas hastan que en la web aparezca `Players list`, que eso quiere decir que se ha logueado.
 
+<br><hr><br>
+
 ### **C) Si vais a `private/auth.php`, veréis que en la función `areUserAndPasswordValid`, se utiliza “SQLite3::escapeString()”, pero, aun así, el formulario es vulnerable a SQL Injections, explicad cuál es el error de programación de esta función y como lo podéis corregir.**
 
 **Explicación del error:**
@@ -106,6 +110,8 @@ $stmt->bindValue(':user', $user, SQLITE3_TEXT);
 $result = $stmt->execute();
 ```
 
+<br><hr><br>
+
 ### **D) Si habéis tenido éxito con el apartado b), os habéis autenticado utilizando el usuario `luis` (si no habéis tenido éxito, podéis utilizar la contraseña 1234 para realizar este apartado). Con el objetivo de mejorar la imagen de la jugadora Candela Pacheco, le queremos escribir un buen puñado de comentarios positivos, pero no los queremos hacer todos con la misma cuenta de usuario.**
 
 ### **Para hacer esto, en primer lugar habéis hecho un ataque de fuerza bruta sobre eldirectorio del servidor web (por ejemplo, probando nombres de archivo) y habéis encontrado el archivo `add\_comment.php~`. Estos archivos seguramente se han creado como copia de seguridad al modificar el archivo “.php” original directamente al servidor. En general, los servidores web no interpretan (ejecuten) los archivos `.php~` sino que los muestran como archivos de texto sin interpretar.**
@@ -126,7 +132,7 @@ Aunque se utiliza `SQLite3::escapeString($body)` para el campo `body`, los valor
 
 Se podria manipular el parámetro `id` en la URL o el valor de la cookie `userId` para inyectar código SQL malicioso.   
 
-<br><br><br>
+<br><br><br><br><hr><br><br><br><br>
 
 # Parte 2 - XSS
 
@@ -164,6 +170,8 @@ Además del simple alert(), aquí hay un ejemplo más detallado de un ataque XSS
 </script>
 ```
 
+<br><hr><br>
+
 ### **B) Por qué dice `&amp;` cuando miráis un link (como el que aparece a la portada de esta aplicación pidiendo que realices un donativo) con parámetros GET dentro de código html si en realidad el link es sólo con "&" ?**
 
 El símbolo `&` (ampersand) en un URL se utiliza en los parámetros de una consulta GET para separar las diferentes variables o parámetros. Por ejemplo:
@@ -187,6 +195,8 @@ http://www.donate.co/?amount=100&amp;destination=ACMEScouting/
 2. **Inyección de código malicioso (XSS)**: Si un enlace en HTML no escapa correctamente los caracteres especiales, un atacante podría inyectar código malicioso en los parámetros de la URL. Por ejemplo, si un formulario o enlace no valida correctamente los parámetros de una URL, un atacante podría usar el `&` para insertar código JavaScript dentro de los parámetros de la URL y ejecutar un ataque de **Cross-Site Scripting (XSS)**. En este caso, el uso de `&amp;` ayuda a prevenir la ejecución de código no deseado.
 
 3. **Robustez en el uso de enlaces**: Al asegurarse de que los símbolos como `&` se codifiquen correctamente con entidades HTML (`&amp;`), se puede garantizar que los enlaces sean interpretados de manera coherente en diferentes navegadores y plataformas. Esto mejora la interoperabilidad y hace que la aplicación sea más confiable y segura.
+
+<br><hr><br>
 
 ### **C) Explicad cuál es el problema de `show\_comments.php`, y cómo lo arreglaríais. Para resolver este apartado, podéis mirar el código fuente de esta página.**
 
@@ -221,6 +231,8 @@ El contenido de `$row['username']` y `$row['body']` proviene directamente de la 
     header("Content-Security-Policy: script-src 'self';");
     ```
 
+<br><hr><br>
+
 ### **D) Descubrid si hay alguna otra página que esté afectada por esta misma vulnerabilidad. En caso positivo, explicad cómo lo habéis descubierto.**
 
 **Otras páginas afectadas:**  
@@ -230,7 +242,7 @@ El contenido de `$row['username']` y `$row['body']` proviene directamente de la 
 **Cómo lo he descubierto:**  
 Se ha probado insertar un script malicioso (`<script>alert('XSS');</script>`) en los campos de entrada. Si el script se ejecuta al visualizar la página con los datos ingresados, la página es vulnerable a XSS.
 
-<br><br><br>
+<br><br><br><br><hr><br><br><br><br>
 
 # Parte 3 - Control de acceso, autenticación y sesiones de usuarios
 
@@ -287,6 +299,8 @@ if ($stmt->execute()) {
 ```php
 <img src="images/logo-iesra-cadiz-color-blanco.png" alt="Logo">
 ```
+
+<br><hr><br>
 
 ### **B) En el apartado de login de la aplicación, también deberíamos implantar una serie de medidas para que sea seguro el acceso, (sin contar la del ejercicio 1.c). Como en el ejercicio anterior, justifica esas medidas e implementa las que sean factibles y necesarias (ten en cuenta las acciones realizadas en el register). Puedes mirar en la carpeta `private`**
 
@@ -350,6 +364,8 @@ if (isset($_POST['Logout'])) {
 <input type="text" id="username" name="username" required><br>
 <input type="password" id="password" name="password" required><br>
 ```
+
+<br><hr><br>
 
 ### **C) Volvemos a la página de `register.php`, vemos que está accesible para cualquier usuario, registrado o sin registrar. Al ser una aplicación en la cual no debería dejar a los usuarios registrarse, qué medidas podríamos tomar para poder gestionarlo e implementa las medidas que sean factibles en este proyecto.**
 
@@ -421,6 +437,8 @@ if (!isset($_SESSION['user']) || !isAdmin($_SESSION['user'])) {
 }
 ```
 
+<br><hr><br>
+
 ### **D) Al comienzo de la práctica hemos supuesto que la carpeta `private` no tenemos acceso, pero realmente al configurar el sistema en nuestro equipo de forma local. ¿Se cumple esta condición? ¿Qué medidas podemos tomar para que esto no suceda?**
 
 La condición de que la carpeta `private` no sea accesible no se cumple en un entorno local por defecto.
@@ -437,6 +455,8 @@ El gran problema que tendria este metodo, es que la clave para desencriptar los 
 En lugar de proporcionar los archivos fuente y el docker compose para levantar la web, podría proporcionar una imagen Docker ya construida, lo que dificultaría el acceso a los archivos internos. 
 
 Esto no es una solución completamente segura, aunque sí dificulta el acceso a los archivos internos en comparación con proporcionar los archivos fuente directamente.
+
+<br><hr><br>
 
 ### **E) Por último, comprobando el flujo de la sesión del usuario. Analiza si está bien asegurada la sesión del usuario y que no podemos suplantar a ningún usuario. Si no está bien asegurada, qué acciones podríamos realizar e implementarlas.**
 
@@ -508,7 +528,7 @@ ini_set('session.use_strict_mode', 1);
 ini_set('session.use_only_cookies', 1);
 ```
 
-<br><br><br>
+<br><br><br><br><hr><br><br><br><br>
 
 # Parte 4 - Servidores web
 
@@ -539,7 +559,7 @@ ini_set('session.use_only_cookies', 1);
 
 Estas medidas ayudarán a proteger tu aplicación que usa **SQLite3** contra los riesgos más comunes de **SQLi** y **XSS**.
 
-<br><br><br>
+<br><br><br><br><hr><br><br><br><br>
 
 # Parte 5 - CSRF
 
@@ -553,6 +573,8 @@ Codigo a añadir:
     <button>Profile</button>
 </a>
 
+<br><hr><br>
+
 ### **B) Una vez lo tenéis terminado, pensáis que la eficacia de este ataque aumentaría si no necesitara que el usuario pulse un botón. Con este objetivo, cread un comentario que sirva vuestros propósitos sin levantar ninguna sospecha entre los usuarios que consulten los comentarios sobre un jugador (`show\_comments.php`).**
 
 Añadimos un codigo malicios en los comentarios de los jugadores
@@ -562,6 +584,7 @@ Añadimos un codigo malicios en los comentarios de los jugadores
 ```
 Este código crea un iframe invisible que carga silenciosamente la página de donación especificada cuando el comentario es mostrado, sin alterar la experiencia visual del usuario ni requerir ninguna interacción. El iframe, al tener dimensiones de cero y sin bordes, permanece completamente oculto en la página de comentarios.
 
+<br><hr><br>
 
 ### **C) Pero web.pagos sólo gestiona pagos y donaciones entre usuarios registrados, puesto que, evidentemente, le tiene que restar los 100€ a la cuenta de algún usuario para poder añadirlos a nuestra cuenta.**
 
@@ -572,6 +595,8 @@ Este código crea un iframe invisible que carga silenciosamente la página de do
 - Transacción entre usuarios registrados: Al ser un sistema de pagos entre usuarios registrados, web.pagos utilizará la cookie de sesión o un token de autenticación para identificar a quien está haciendo la donación y deducir el dinero de su cuenta. Este es el paso clave: la transacción solo puede ocurrir si el usuario tiene una cuenta registrada y activa dentro de web.pagos.
 
 - Verificación de usuario: Si el usuario está logueado en la plataforma, el ataque será exitoso, ya que la donación se efectuará desde la cuenta del usuario víctima (que está visualizando el comentario o interactuando con el botón malicioso). Si el usuario no está logueado o no tiene una sesión activa, el ataque fallará, porque web.pagos no podrá deducir los 100€ de su cuenta.
+
+<br><hr><br>
 
 ### **D) Si web.pagos modifica la página `donate.php` para que reciba los parámetros a través de POST, quedaría blindada contra este tipo de ataques? En caso negativo, preparad un mensaje que realice un ataque equivalente al de la apartado b) enviando los parámetros “amount” i “receiver” por POST.**
 
