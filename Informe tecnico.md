@@ -13,17 +13,17 @@
     SELECT userId, password FROM users WHERE username = "" OR password="1234"-- -"
     ```
 
-    #### **3. Campos utilizados y no utilizados en la consulta SQL:**
+    **3. Campos utilizados y no utilizados en la consulta SQL:**
     - **Campos utilizados:** Solo el campo `Username` se usa directamente en la consulta SQL.
     - **Campos no utilizados:** El campo `Password` no se utiliza, ya que no forma parte de la consulta construida.
 
-    #### **4. Identificación de la vulnerabilidad:**
+    **4. Identificación de la vulnerabilidad:**
     La vulnerabilidad presente es una **inyección SQL (SQL Injection)**. Esto ocurre porque los datos introducidos por el usuario se concatenan directamente en la consulta SQL sin una validación ni un saneamiento adecuado.
 
-    #### **Justificación del análisis:**
+    **Justificación del análisis:**
     La vulnerabilidad se debe a que el campo password no se usa en la consulta SQL para verificar la validez de la contraseña, lo que hace que la base de datos devuelva datos innecesarios (como userId y password) sin autenticar adecuadamente al usuario. Además, el valor ingresado en username no está siendo adecuadamente validado o escapado, lo que permite que se ejecute código malicioso.
 
-    #### **Consulta generada detallada:**
+    **Consulta generada detallada:**
     La consulta final, tras la inyección, sería:
     ```sql
     SELECT userId, password FROM users WHERE username = "" OR password="1234"
